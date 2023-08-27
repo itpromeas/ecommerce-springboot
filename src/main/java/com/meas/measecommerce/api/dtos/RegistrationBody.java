@@ -2,14 +2,17 @@ package com.meas.measecommerce.api.dtos;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * User Registration DTO
+ */
 public class RegistrationBody {
     /** The username. */
     @NotNull
     @NotBlank
     @Size(min=4,max=255)
     private String username;
-    /** The email. */
 
+    /** The email. */
     @NotNull
     @NotBlank
     @Email

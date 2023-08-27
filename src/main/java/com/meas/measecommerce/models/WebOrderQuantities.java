@@ -2,6 +2,7 @@ package com.meas.measecommerce.models;
 
 import jakarta.persistence.*;
 
+
 @Entity
 @Table(name = "web_order_quantities")
 public class WebOrderQuantities {
