@@ -16,14 +16,19 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthenticationController {
 
-    private UserService userService;
+    private final UserService userService;
 
     public AuthenticationController(UserService userService) {
         this.userService = userService;
     }
 
+    /**
+     * Post Mapping to handle registering users.
+     * @param registrationBody The registration information.
+     * @return Response to front end.
+     */
     @PostMapping("/register")
-    public ResponseEntity registrerUser(@Valid @RequestBody RegistrationBody registrationBody){
+    public ResponseEntity registerUser(@Valid @RequestBody RegistrationBody registrationBody){
         try {
             userService.registerUser(registrationBody);
             return ResponseEntity.ok().build();
@@ -33,9 +38,9 @@ public class AuthenticationController {
     }
 
     /**
-     *
-     * @param loginBody
-     * @return
+     * Post Mapping to handle user logins to provide authentication token.
+     * @param loginBody The login information.
+     * @return The authentication token if successful.
      */
     @PostMapping("/login")
     public ResponseEntity loginUser(@Valid @RequestBody LoginBody loginBody){
@@ -48,6 +53,11 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Gets the profile of the currently logged-in user and returns it.
+     * @param user The authentication principal object.
+     * @return The user profile.
+     */
     @GetMapping("/profile")
     public User getLoggedUserProfile(@AuthenticationPrincipal User user){
         return user;
