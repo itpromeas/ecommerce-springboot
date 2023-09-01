@@ -33,7 +33,7 @@ public class WebSecurityConfig {
         http.authorizeHttpRequests(
                 auth->auth
                         // Specific exclusions or rules.
-                        .requestMatchers("/product", "/auth/register", "/auth/login")
+                        .requestMatchers("/product", "/auth/register", "/auth/login", "/auth/verify")
                         // Everything else should be authenticated.
                         .permitAll().anyRequest().authenticated()
         );

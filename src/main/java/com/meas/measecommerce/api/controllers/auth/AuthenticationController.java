@@ -3,7 +3,9 @@ package com.meas.measecommerce.api.controllers.auth;
 import com.meas.measecommerce.api.dtos.LoginBody;
 import com.meas.measecommerce.api.dtos.LoginResponse;
 import com.meas.measecommerce.api.dtos.RegistrationBody;
+import com.meas.measecommerce.exceptions.EmailFailureException;
 import com.meas.measecommerce.exceptions.UserAlreadyExistsException;
+import com.meas.measecommerce.exceptions.UserNotVerifiedException;
 import com.meas.measecommerce.models.User;
 import com.meas.measecommerce.services.UserService;
 import jakarta.validation.Valid;
@@ -34,6 +36,8 @@ public class AuthenticationController {
             return ResponseEntity.ok().build();
         } catch (UserAlreadyExistsException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }catch (EmailFailureException e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -44,13 +48,44 @@ public class AuthenticationController {
      */
     @PostMapping("/login")
     public ResponseEntity loginUser(@Valid @RequestBody LoginBody loginBody){
-        String jwt = userService.loginUser(loginBody);
-        if(jwt == null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        String jwt = null;
+        try {
+            jwt = userService.loginUser(loginBody);
+        } catch (UserNotVerifiedException ex) {
+            LoginResponse response = new LoginResponse();
+            response.setSuccess(false);
+            String reason = "USER_NOT_VERIFIED";
+            if (ex.isNewEmailSent()) {
+                reason += "_EMAIL_RESENT";
+            }
+            response.setFailureReason(reason);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (EmailFailureException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        LoginResponse response = new LoginResponse();
-        response.setJwt(jwt);
-        return ResponseEntity.ok(response);
+        if (jwt == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } else {
+            LoginResponse response = new LoginResponse();
+            response.setJwt(jwt);
+            response.setSuccess(true);
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * Post mapping to verify the email of an account using the emailed token.
+     * @param token The token emailed for verification. This is not the same as a
+     *              authentication JWT.
+     * @return 200 if successful. 409 if failure.
+     */
+    @PostMapping("/verify")
+    public ResponseEntity verifyEmail(@RequestParam String token) {
+        if (userService.verifyUser(token)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 
     /**
