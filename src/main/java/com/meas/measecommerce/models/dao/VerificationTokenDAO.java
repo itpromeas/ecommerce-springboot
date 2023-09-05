@@ -4,6 +4,7 @@ import com.meas.measecommerce.models.User;
 import com.meas.measecommerce.models.VerificationToken;
 import org.springframework.data.repository.ListCrudRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -14,4 +15,6 @@ public interface VerificationTokenDAO extends ListCrudRepository<VerificationTok
     Optional<VerificationToken> findByToken(String token);
 
     void deleteByUser(User user);
+
+    List<VerificationToken> findByUser_IdOrderByIdDesc(Long id);
 }
