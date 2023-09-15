@@ -2,8 +2,10 @@ package com.meas.measecommerce.api.controllers.auth;
 
 import com.meas.measecommerce.api.dtos.LoginBody;
 import com.meas.measecommerce.api.dtos.LoginResponse;
+import com.meas.measecommerce.api.dtos.PasswordResetBody;
 import com.meas.measecommerce.api.dtos.RegistrationBody;
 import com.meas.measecommerce.exceptions.EmailFailureException;
+import com.meas.measecommerce.exceptions.EmailNotFoundException;
 import com.meas.measecommerce.exceptions.UserAlreadyExistsException;
 import com.meas.measecommerce.exceptions.UserNotVerifiedException;
 import com.meas.measecommerce.models.User;
@@ -97,4 +99,34 @@ public class AuthenticationController {
     public User getLoggedUserProfile(@AuthenticationPrincipal User user){
         return user;
     }
+
+
+    /**
+     * Sends an email to the user with a link to reset their password.
+     * @param email The email to reset.
+     * @return Ok if sent, bad request if email not found.
+     */
+    @PostMapping("/forgot")
+    public ResponseEntity forgotPassword(@RequestParam String email) {
+        try {
+            userService.forgotPassword(email);
+            return ResponseEntity.ok().build();
+        } catch (EmailNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (EmailFailureException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Resets the users password with the given token and password.
+     * @param body The information for the password reset.
+     * @return Okay if password was set.
+     */
+    @PostMapping("/reset")
+    public ResponseEntity resetPassword(@Valid @RequestBody PasswordResetBody body) {
+        userService.resetPassword(body);
+        return ResponseEntity.ok().build();
+    }
+
 }

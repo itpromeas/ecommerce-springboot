@@ -3,6 +3,7 @@ package com.meas.measecommerce.services;
 import com.icegreen.greenmail.configuration.GreenMailConfiguration;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
 import com.icegreen.greenmail.util.ServerSetup;
+import com.icegreen.greenmail.util.ServerSetupTest;
 import com.meas.measecommerce.api.dtos.LoginBody;
 import com.meas.measecommerce.api.dtos.RegistrationBody;
 import com.meas.measecommerce.exceptions.EmailFailureException;
@@ -17,64 +18,54 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
+/**
+ * Test class to unit test the UserService class.
+ */
 @SpringBootTest
+@AutoConfigureMockMvc
 public class UserServiceTest {
 
     /** Extension for mocking email sending. */
     @RegisterExtension
-    private static GreenMailExtension greenMailExtension = new GreenMailExtension(ServerSetup.SMTP)
+    private static GreenMailExtension greenMailExtension = new GreenMailExtension(ServerSetupTest.SMTP)
             .withConfiguration(GreenMailConfiguration.aConfig().withUser("springboot", "secret"))
-            .withPerMethodLifecycle(true); // this will wipe the inbox everytime
-
+            .withPerMethodLifecycle(true);
     /** The UserService to test. */
     @Autowired
     private UserService userService;
-
     /** The Verification Token DAO. */
     @Autowired
     private VerificationTokenDAO verificationTokenDAO;
 
+    /**
+     * Tests the registration process of the user.
+     * @throws MessagingException Thrown if the mocked email service fails somehow.
+     */
     @Test
     @Transactional
-    public void testRegisterUser(){
+    public void testRegisterUser() throws MessagingException {
         RegistrationBody body = new RegistrationBody();
         body.setUsername("UserA");
         body.setEmail("UserServiceTest$testRegisterUser@junit.com");
         body.setFirstName("FirstName");
         body.setLastName("LastName");
         body.setPassword("MySecretPassword123");
-
         Assertions.assertThrows(UserAlreadyExistsException.class,
-                () -> userService.registerUser(body),
-                "Username already exists."
-        );
-
+                () -> userService.registerUser(body), "Username should already be in use.");
         body.setUsername("UserServiceTest$testRegisterUser");
         body.setEmail("UserA@junit.com");
-
         Assertions.assertThrows(UserAlreadyExistsException.class,
-                () -> userService.registerUser(body),
-                "Email already exists."
-        );
-
+                () -> userService.registerUser(body), "Email should already be in use.");
         body.setEmail("UserServiceTest$testRegisterUser@junit.com");
-
-        Assertions.assertDoesNotThrow(
-                () -> userService.registerUser(body),
-                "User should register successfully."
-        );
-
-        try {
-            Assertions.assertEquals(body.getEmail(), greenMailExtension.getReceivedMessages()[0]
-                    .getRecipients(Message.RecipientType.TO)[0].toString());
-        } catch (MessagingException e) {
-            throw new RuntimeException(e);
-        }
-
+        Assertions.assertDoesNotThrow(() -> userService.registerUser(body),
+                "User should register successfully.");
+        Assertions.assertEquals(body.getEmail(), greenMailExtension.getReceivedMessages()[0]
+                .getRecipients(Message.RecipientType.TO)[0].toString());
     }
 
     /**
@@ -95,7 +86,6 @@ public class UserServiceTest {
         Assertions.assertNotNull(userService.loginUser(body), "The user should login successfully.");
         body.setUsername("UserB");
         body.setPassword("PasswordB123");
-
         try {
             userService.loginUser(body);
             Assertions.assertTrue(false, "User should not have email verified.");
@@ -133,4 +123,5 @@ public class UserServiceTest {
             Assertions.assertNotNull(body, "The user should now be verified.");
         }
     }
+
 }

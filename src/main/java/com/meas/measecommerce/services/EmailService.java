@@ -1,6 +1,7 @@
 package com.meas.measecommerce.services;
 
 import com.meas.measecommerce.exceptions.EmailFailureException;
+import com.meas.measecommerce.models.User;
 import com.meas.measecommerce.models.VerificationToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
@@ -50,7 +51,32 @@ public class EmailService {
         } catch (MailException ex) {
             throw new EmailFailureException();
         }
-
-
     }
+
+    /**
+     * Sends a password reset request email to the user.
+     * @param user The user to send to.
+     * @param token The token to send the user for reset.
+     * @throws EmailFailureException
+     */
+    public void sendPasswordResetEmail(User user, String token) throws EmailFailureException {
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+
+            message.setSubject("Your password reset request link.");
+            String msgString = "You requested a password reset on our website. Please " +
+                    "find the link below to be able to reset your password.\n" + url +
+                    "/auth/reset?token=" + token;
+
+            message.setText(msgString);
+
+            javaMailSender.send(message);
+        } catch (MailException ex) {
+            throw new EmailFailureException();
+        }
+    }
+
+
 }

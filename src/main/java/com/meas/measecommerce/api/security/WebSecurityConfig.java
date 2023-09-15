@@ -24,20 +24,30 @@ public class WebSecurityConfig {
      * @return The chain built.
      * @throws Exception Thrown on error configuring.
      */
-    @Bean
+    /*@Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
-        //TODO: Proper authentication
         http.csrf(csrf->csrf.disable()).cors(cors->cors.disable());
         http.addFilterBefore(jwtRequestFilter, AuthorizationFilter.class);
 
         http.authorizeHttpRequests(
                 auth->auth
                         // Specific exclusions or rules.
-                        .requestMatchers("/product", "/auth/register", "/auth/login", "/auth/verify")
+                        .requestMatchers(
+                                "/product",
+                                "/auth/register",
+                                "/auth/login",
+                                "/auth/verify",
+                                "/auth/forgot",
+                                "/auth/reset",
+                                "/error",
+                                "/websocket",
+                                "/websocket/**"
+                        )
+                        .permitAll()
                         // Everything else should be authenticated.
-                        .permitAll().anyRequest().authenticated()
+                        .anyRequest().authenticated()
         );
 
         return http.build();
-    }
+    }*/
 }

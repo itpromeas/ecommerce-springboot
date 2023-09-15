@@ -1,8 +1,10 @@
 package com.meas.measecommerce.services;
 
 import com.meas.measecommerce.api.dtos.LoginBody;
+import com.meas.measecommerce.api.dtos.PasswordResetBody;
 import com.meas.measecommerce.api.dtos.RegistrationBody;
 import com.meas.measecommerce.exceptions.EmailFailureException;
+import com.meas.measecommerce.exceptions.EmailNotFoundException;
 import com.meas.measecommerce.exceptions.UserAlreadyExistsException;
 import com.meas.measecommerce.exceptions.UserNotVerifiedException;
 import com.meas.measecommerce.models.User;
@@ -143,5 +145,45 @@ public class UserService {
         return false;
     }
 
+    /**
+     * Sends the user a forgot password reset based on the email provided.
+     * @param email The email to send to.
+     * @throws EmailNotFoundException Thrown if there is no user with that email.
+     * @throws EmailFailureException
+     */
+    public void forgotPassword(String email) throws EmailNotFoundException, EmailFailureException {
+        Optional<User> opUser = userDAO.findByEmailIgnoreCase(email);
+        if (opUser.isPresent()) {
+            User user = opUser.get();
+            String token = jwtService.generatePasswordResetJWT(user);
+            emailService.sendPasswordResetEmail(user, token);
+        } else {
+            throw new EmailNotFoundException();
+        }
+    }
+
+    /**
+     * Resets the users password using a given token and email.
+     * @param body The password reset information.
+     */
+    public void resetPassword(PasswordResetBody body) {
+        String email = jwtService.getResetPasswordEmail(body.getToken());
+        Optional<User> opUser = userDAO.findByEmailIgnoreCase(email);
+        if (opUser.isPresent()) {
+            User user = opUser.get();
+            user.setPassword(encryptionService.encryptPassword(body.getPassword()));
+            userDAO.save(user);
+        }
+    }
+
+    /**
+     * Method to check if an authenticated user has permission to a user ID.
+     * @param user The authenticated user.
+     * @param id The user ID.
+     * @return True if they have permission, false otherwise.
+     */
+    public boolean userHasPermissionToUser(User user, Long id) {
+        return user.getId() == id;
+    }
 
 }
